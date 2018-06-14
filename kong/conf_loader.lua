@@ -636,6 +636,20 @@ local function load(path, custom_conf)
     setmetatable(conf.plugins, nil) -- remove Map mt
   end
 
+  -- this will be skipped in the above print block TODO
+  -- inject an shm for prometheus plugin if the plugin is in the available list
+  if conf.plugins["prometheus"] then
+    local shm_value = conf["nginx_http_directives"]["lua_shared_dict"]
+    if shm_value then
+      if not string.match(shm_value, "prometheus_metrics") then
+        shm_value = shm_value .. "; lua_shared_dict prometheus_metrics 5m"
+      end
+    else
+      shm_value = "prometheus_metrics 5m"
+    end
+    conf["nginx_http_directives"]["lua_shared_dict"] = shm_value
+  end
+
   -- nginx user directive
   do
     local user = conf.nginx_user:gsub("^%s*", ""):gsub("%s$", ""):gsub("%s+", " ")

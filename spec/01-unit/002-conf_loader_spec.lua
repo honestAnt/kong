@@ -205,6 +205,32 @@ describe("Configuration loader", function()
     end)
   end)
 
+  describe("prometheus shm", function()
+    it("is set if shm is not provided as part of nginx_http_* directives", function()
+      local conf = assert(conf_loader(nil, {
+        custom_plugins = "prometheus", -- TODO change this to use new plugins conf property once merged into next
+      }))
+      assert.equal("prometheus_metrics 5m",
+                   conf.nginx_http_directives["lua_shared_dict"])
+    end)
+    it("is not changed if user provides one", function()
+      local conf = assert(conf_loader(nil, {
+        custom_plugins = "prometheus",
+        nginx_http_lua_shared_dict = "prometheus_metrics 2m",
+      }))
+      assert.equal("prometheus_metrics 2m",
+                   conf.nginx_http_directives["lua_shared_dict"])
+    end)
+    it("is not changed if user provides one", function()
+      local conf = assert(conf_loader(nil, {
+        custom_plugins = "prometheus",
+        nginx_http_lua_shared_dict = "custom_cache 2m",
+      }))
+      assert.equal("custom_cache 2m; lua_shared_dict prometheus_metrics 5m",
+                   conf.nginx_http_directives["lua_shared_dict"])
+    end)
+  end)
+
   describe("nginx_user", function()
     it("is nil by default", function()
       local conf = assert(conf_loader(helpers.test_conf_path))
